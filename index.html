@@ -8,26 +8,25 @@
   * { box-sizing: border-box; }
   body { margin:0; background:#fff; font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif; color:#333; }
   .wrap { max-width:480px; margin:0 auto; padding:24px 16px 56px; }
-  .logo { text-align:center; font-size:30px; font-weight:700; color:#2b2f3a; letter-spacing:.03em; }
-  .logo span { color:#2a6db0; }
+  .logo { text-align:center; }
   h1 { font-size:26px; margin:28px 0 6px; text-align:left; color:#444; }
   .desc { font-size:14px; line-height:1.7; color:#555; margin:0 0 18px; }
   .step { background:#ececec; border-radius:14px; padding:18px 14px; margin-bottom:16px; text-align:center; }
-  .step h2 { margin:0 0 14px; font-size:17px; color:#009ece; }
+  .step h2 { margin:0 0 6px; font-size:17px; color:#009ece; }
+  .step .sub { font-size:12px; color:#777; margin:0 0 12px; }
   .stars button { background:none; border:0; font-size:44px; line-height:1; color:#e6b93a; cursor:pointer; padding:0 3px; }
   .tags { display:flex; flex-wrap:wrap; justify-content:center; gap:10px 8px; }
   .tag { border:2px solid #009ece; background:#fff0; color:#222; border-radius:10px; padding:9px 16px; font:inherit; font-size:16px; cursor:pointer; }
   .tag.on { background:#009ece; color:#fff; }
-  textarea { width:100%; height:150px; padding:10px; font:inherit; font-size:14px; border:1px solid #ccc; border-radius:4px; resize:vertical; background:#fff; }
+  textarea, input[type=text] { width:100%; padding:10px; font:inherit; font-size:14px; border:1px solid #ccc; border-radius:4px; background:#fff; }
+  textarea { height:150px; resize:vertical; }
+  #extra { height:60px; }
   .pill { display:block; width:100%; margin-top:12px; padding:15px; border-radius:30px; border:2px solid #009ece; background:#fff; color:#009ece; font:inherit; font-size:17px; font-weight:700; text-align:center; text-decoration:none; cursor:pointer; }
-  #go { background:#ff5f41; border-color:#ff5f41; }
   .pill.main { background:#009ece; color:#fff; }
+  #go.pill.main { background:#ff5f41; border-color:#ff5f41; }
   .pill:disabled { opacity:.45; cursor:not-allowed; }
   .small { font-size:12px; color:#777; margin-top:10px; line-height:1.6; }
-  .chips { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0; justify-content:center; }
-  .chip { border:1px dashed #009ece; background:#fff; color:#009ece; border-radius:14px; padding:5px 10px; font:inherit; font-size:12px; cursor:pointer; }
   .lbl { font-size:13px; color:#555; text-align:left; margin:14px 0 4px; }
-  #extra { height:60px; }
 </style>
 </head>
 <body>
@@ -42,19 +41,27 @@
   </div>
 
   <div class="step">
-    <h2>Step 2: 何について相談しましたか？（複数OK）</h2>
-    <div class="tags" id="tagsConsult"></div>
+    <h2>Step 2: ご相談の内容</h2>
+    <p class="sub">当てはまるものを選んでください（複数OK）</p>
+    <div class="tags" id="gService"></div>
   </div>
 
   <div class="step">
-    <h2>Step 3: 評価ポイントを選択してください</h2>
-    <div class="tags" id="tagsEval"></div>
+    <h2>Step 3: エリア</h2>
+    <p class="sub">お住まい・物件のある地域（複数OK・任意）</p>
+    <div class="tags" id="gArea"></div>
   </div>
 
   <div class="step">
-    <h2>Step 4: ご意見をお聞かせください</h2>
+    <h2>Step 4: 印象に残ったこと</h2>
+    <p class="sub">当てはまるものを選んでください（複数OK）</p>
+    <div class="tags" id="gImpression"></div>
+  </div>
+
+  <div class="step">
+    <h2>Step 5: ご意見をお聞かせください</h2>
     <div class="lbl">担当してくれたスタッフのお名前（任意）</div>
-    <input id="staff" type="text" placeholder="例：山田" style="width:100%;padding:10px;font:inherit;font-size:14px;border:1px solid #ccc;border-radius:4px">
+    <input id="staff" type="text" placeholder="例：山田">
     <div class="lbl">ご自身の言葉で書きたいこと（任意）</div>
     <textarea id="extra" placeholder="自由にご記入ください"></textarea>
     <button class="pill main" id="gen" type="button" disabled>文章を自動作成</button>
@@ -63,105 +70,93 @@
     <textarea id="text" placeholder="ここに口コミの文章ができます"></textarea>
     <button class="pill" id="copy" type="button" disabled>レビューをコピー</button>
     <a class="pill main" id="go" target="_blank" rel="noopener">Googleマップで口コミを投稿する</a>
-    <p class="small">文章は選んだ内容をもとにした下書きです。実際のご感想に合わせて、修正してから投稿してください。</p>
+    <p class="small">選んだキーワードは「書く内容のヒント」です。できあがった文章は下書きですので、実際のご体験に合わせて自由に修正してから投稿してください。</p>
   </div>
 </div>
 
 <script>
   const GOOGLE_URL = "https://maps.app.goo.gl/Psrwhhv1R2cZLDV69";
 
-  // 評価ポイント（売買のみ・肯定的な項目のみ）。1項目につき複数の言い回し
-  const TAGS = {
-    "不動産売買":["不動産の売買でお世話になりました。","初めての不動産売買でしたが、最初から最後まで丁寧にサポートしていただきました。","売買の流れを一つひとつ確認しながら進めていただけました。"],
-    "住宅購入":["住宅購入の相談に乗っていただきました。","マイホーム購入という大きな決断を、親身に支えていただきました。","住宅購入で気になる点を細かく聞いていただけました。"],
-    "中古住宅":["中古住宅について丁寧に案内していただきました。","中古住宅の状態や注意点も、分かりやすく説明していただけました。","中古住宅探しで、希望に合う物件を提案していただきました。"],
-    "新築":["新築についても分かりやすく説明していただきました。","新築物件の特徴や違いを比べながら教えていただけました。","新築選びで迷っていた点をていねいに整理していただけました。"],
-    "土地探し":["土地探しで親身にサポートしていただきました。","土地の条件や周辺環境まで丁寧に調べていただけました。","希望に合う土地を根気よく探していただけました。"],
-    "売却相談":["売却の相談にも親身に対応していただきました。","売却について、不安な点を一つずつ解消していただけました。","売却の進め方を分かりやすく説明していただけました。"],
-    "査定":["査定の内容も丁寧に説明していただきました。","査定の根拠を分かりやすく教えていただけました。","査定から売却の見通しまで、納得できる説明でした。"],
-    "住宅ローン":["住宅ローンについても分かりやすく教えていただきました。","住宅ローンの不安を、丁寧な説明で解消していただけました。","ローンの相談にも親身に乗っていただけました。"],
-    "リフォーム":["リフォームについても丁寧に対応していただきました。","リフォームの内容や費用感まで分かりやすく相談できました。","リフォームの希望を細かく聞いていただけました。"],
-    "リノベーション":["リノベーションの相談にも親身に乗っていただきました。","リノベーションのイメージを形にするお手伝いをしていただけました。","リノベーションの選択肢を丁寧に提案していただけました。"],
-    "物件紹介":["物件を丁寧に紹介していただきました。","希望条件に合った物件を的確に紹介していただけました。","物件のメリットだけでなく注意点も教えていただけました。"],
-    "担当者":["担当の方の対応がとても良かったです。","担当の方が親身で、とても頼りになりました。","担当の方の誠実な人柄に安心できました。"],
+  // ===== サービス（相談内容）：各3パターンの詳しい一文 =====
+  const SERVICE = {
+    "不動産売却":["売却の流れを一つひとつ確認しながら進めていただけました。","査定から引き渡しまで、分かりやすく説明していただけました。","売却の不安な点を、丁寧に解消していただけました。"],
+    "土地探し":["希望に合う土地を根気よく探していただけました。","土地の条件や周辺環境まで丁寧に調べていただけました。","土地探しの進め方から親身にサポートしていただけました。"],
+    "中古住宅の購入":["中古住宅の状態や注意点も、分かりやすく説明していただけました。","中古住宅探しで、希望に合う物件を提案していただけました。","中古住宅の購入という大きな決断を、親身に支えていただけました。"],
+    "新築一戸建て":["新築一戸建ての特徴や違いを、比べながら教えていただけました。","新築選びで迷っていた点を、丁寧に整理していただけました。","マイホームのイメージを具体的にしていただけました。"],
+    "ハウスメーカー選び":["数あるハウスメーカーを、公平な立場で比較していただけました。","ハウスメーカー選びで迷っていたところを、整理していただけました。","各社の特徴を分かりやすく教えていただけました。"],
+    "工務店の紹介":["希望に合う工務店を紹介していただけました。","工務店選びのポイントを丁寧に教えていただけました。","信頼できる工務店とつないでいただけました。"],
+    "注文住宅の相談":["注文住宅の進め方を、一から丁寧に教えていただけました。","注文住宅の希望を細かく聞いていただけました。","家づくり全体の流れを分かりやすく説明していただけました。"],
+    "資金計画・住宅ローン":["資金計画やローンの不安を、丁寧な説明で解消していただけました。","無理のない資金計画を一緒に考えていただけました。","住宅ローンのことも分かりやすく教えていただけました。"],
+    "リフォーム・外構の相談":["リフォームや外構の相談にも親身に乗っていただけました。","リフォームの内容や費用感まで分かりやすく相談できました。","外構まで含めて、トータルで相談できて助かりました。"]
+  };
+  const AREA = ["名古屋市","昭和区","瑞穂区","天白区","桜山","御器所","八事","川名・いりなか"];
+  // ===== 印象：各3パターン =====
+  const IMPRESSION = {
+    "相談しやすい":["気軽に相談しやすい雰囲気でした。","些細なことでも気軽に相談できました。","初めてでも相談しやすいお店でした。"],
+    "比較して選べた":["いくつかを比較しながら、納得して選ぶことができました。","比較検討のための情報を分かりやすく整理していただけました。","自分に合うものを比べて選ぶことができました。"],
     "説明が丁寧":["説明が丁寧で分かりやすかったです。","専門的な内容も、噛み砕いて説明していただけました。","質問にも一つひとつ丁寧に答えていただけました。"],
-    "親切な対応":["親切に対応していただきました。","終始親切で、気持ちよく相談できました。","細かな要望にも快く対応していただけました。"],
-    "無理な提案なし":["無理な提案もなく安心して相談できました。","しつこい営業がなく、自分のペースで検討できました。","こちらの意向を尊重して進めていただけました。"],
-    "不安解消":["不安に思っていたことを解消していただけました。","疑問点をその場で解決していただき、安心できました。","心配事を丁寧に聞いていただけました。"],
-    "安心感":["安心してお任せできました。","安心感のある対応でした。","信頼してお任せすることができました。"],
-    "気軽に相談":["気軽に相談できる雰囲気でした。","些細なことでも気軽に相談できました。","初めてでも入りやすい雰囲気のお店でした。"],
-    "スタッフの対応":["スタッフの対応が丁寧でした。","スタッフの皆さんの対応が明るく丁寧でした。","どのスタッフの方も感じが良かったです。"],
-    "対応が早い":["対応が早く助かりました。","連絡や手続きがスムーズで助かりました。","問い合わせへの返答が早く、安心できました。"],
-    "購入後のフォロー":["購入後のフォローも安心できました。","購入後も気にかけていただき、心強かったです。","引き渡し後の相談にも対応していただけそうで安心です。"],
-    "清潔感がある":["店内に清潔感がありました。","店内が清潔で、気持ちよく相談できました。","明るく清潔感のあるお店でした。"],
-    "アクセス":["アクセスが良く通いやすかったです。","お店の場所が分かりやすく、通いやすかったです。","アクセスしやすい立地で便利でした。"],
-    "知識が豊富":["不動産の知識が豊富で頼りになりました。","専門的な知識に基づいて、的確にアドバイスしていただけました。","知識が豊富で、どんな質問にも答えていただけました。"],
-    "提案が的確":["提案が的確で、とても参考になりました。","こちらの希望を踏まえた的確な提案をいただけました。","自分では気づかなかった選択肢も提案していただけました。"],
-    "雰囲気が良い":["お店の雰囲気が良く、リラックスして話せました。","スタッフの皆さんの雰囲気が良く、居心地が良かったです。","明るい雰囲気で、緊張せずに相談できました。"],
-    "また相談したい":["また何かあればぜひお願いしたいと思います。","次の機会もこちらに相談したいです。","これからも頼りにしたいと思えるお店でした。"],
-    "満足できた":["全体として満足できました。","相談して本当に良かったと思います。","結果にとても満足しています。"]
+    "担当者が親身":["担当の方が親身で、とても頼りになりました。","担当の方の誠実な人柄に安心できました。","担当の方がこちらの話をよく聞いてくださいました。"],
+    "営業がしつこくない":["しつこい営業がなく、自分のペースで検討できました。","無理な提案もなく、安心して相談できました。","こちらの意向を尊重して進めていただけました。"],
+    "スムーズに売却できた":["売却までスムーズに進めていただけました。","手続きもスムーズで助かりました。","思っていたよりスムーズに売却できました。"]
   };
   const OPEN = {5:"大変満足しています。",4:"満足しています。",3:"全体的には普通でした。",2:"あまり満足できませんでした。",1:"残念ながら満足できませんでした。"};
-  // 選んだ項目が少ない時の締めの一言（実際の星の数に合わせる）
   const CLOSE = {
     5:["また何かあればぜひ相談したいです。","周りの方にもおすすめしたいです。","本当にありがとうございました。"],
     4:["また相談したいと思います。","ありがとうございました。"],
-    3:["ありがとうございました。"],
-    2:["ありがとうございました。"],
-    1:["ありがとうございました。"]
+    3:["ありがとうございました。"], 2:["ありがとうございました。"], 1:["ありがとうございました。"]
   };
   const pick = a => a[Math.floor(Math.random()*a.length)];
   const shuffle = a => [...a].sort(()=>Math.random()-.5);
-
-  let star = 0; const picked = new Set();
   const $ = id => document.getElementById(id);
+
+  let star = 0;
+  const sel = { service:new Set(), area:new Set(), impression:new Set() };
   $("go").href = GOOGLE_URL;
 
   const starBox = $("stars");
   for (let i = 1; i <= 5; i++) {
-    const b = document.createElement("button"); b.type="button"; b.textContent="☆";
+    const b = document.createElement("button"); b.type="button"; b.textContent="☆"; b.setAttribute("aria-label", i+"つ星");
     b.onclick = () => { star = i; paint(); refresh(); };
     starBox.appendChild(b);
   }
   function refresh(){ $("gen").disabled = !star; }
   function paint(){ [...starBox.children].forEach((b,k)=> b.textContent = k<star ? "★":"☆"); }
 
-  const CONSULT = ["不動産売買","住宅購入","中古住宅","新築","土地探し","売却相談","査定","住宅ローン","リフォーム","リノベーション","物件紹介"];
-  function mount(boxId, names){
+  function mount(boxId, names, set){
     const box = $(boxId);
     names.forEach(name => {
       const b = document.createElement("button"); b.type="button"; b.className="tag"; b.textContent=name;
-      b.onclick = () => { picked.has(name) ? picked.delete(name) : picked.add(name); b.classList.toggle("on"); };
+      b.onclick = () => { set.has(name) ? set.delete(name) : set.add(name); b.classList.toggle("on"); };
       box.appendChild(b);
     });
   }
-  mount("tagsConsult", CONSULT);
-  mount("tagsEval", Object.keys(TAGS).filter(n => !CONSULT.includes(n)));
+  mount("gService", Object.keys(SERVICE), sel.service);
+  mount("gArea", AREA, sel.area);
+  mount("gImpression", Object.keys(IMPRESSION), sel.impression);
 
-  function openers(list){
-    const j = list.join("、");
-    return pick([j+"について相談しました。", j+"のことでお世話になりました。", j+"の件で相談に伺いました。", j+"を考えていて、こちらにお願いしました。"]);
+  function opener(areas, services){
+    const a = areas.join("、"), s = services.join("、");
+    if (a && s) return pick([a+"で"+s+"の相談をしました。", a+"にて、"+s+"の件でお世話になりました。", a+"で"+s+"を考えていて、こちらにお願いしました。"]);
+    if (s) return pick([s+"について相談しました。", s+"のことでお世話になりました。", s+"の件で相談に伺いました。"]);
+    return "";
   }
 
   function generate(){
-    const all = [...picked];
-    const consult = shuffle(all.filter(n => CONSULT.includes(n)));
-    const evals = shuffle(all.filter(n => !CONSULT.includes(n)));
-    const out = [];
-    // 相談内容：導入文 + 詳しい一文（最大2つ）
-    if (consult.length) {
-      out.push(openers(consult));
-      consult.slice(0, 2).forEach(n => out.push(shuffle(TAGS[n])[0]));
-    }
-    // 担当者：名前があれば名前入りの文を1つだけ（「担当者」項目の文は出さない）
+    const services = shuffle([...sel.service]);
+    const areas = shuffle([...sel.area]);
+    const imps = shuffle([...sel.impression]);
     const staff = $("staff").value.trim().replace(/(さん|様)$/, "");
+    const out = [];
+    const o = opener(areas, services); if (o) out.push(o);
+    // 相談内容：詳しい一文（最大2つ・1項目につき1文）
+    services.slice(0, 2).forEach(n => out.push(pick(SERVICE[n])));
+    // 担当者名
     if (staff) out.push(pick(["担当の"+staff+"さんが親身に対応してくださいました。","担当の"+staff+"さんの対応がとても丁寧でした。","担当してくださった"+staff+"さんに感謝しています。"]));
-    // 評価：1項目につき1文だけ（同じ項目から複数文を出さない）
-    evals.filter(n => !(staff && n === "担当者")).forEach(n => out.push(pick(TAGS[n])));
-    // 自分の言葉
+    // 印象：1項目につき1文（担当者名があれば「担当者が親身」は重複するので出さない）
+    imps.filter(n => !(staff && n === "担当者が親身")).forEach(n => out.push(pick(IMPRESSION[n])));
     const own = $("extra").value.trim();
     if (own) out.push(own);
-    // 星の数に合わせた一文は、先頭か後半のどちらかにランダムに置く
+    // 星の数に合わせた一文は先頭か前半にランダム配置
     const op = OPEN[star];
     if (Math.random() < 0.5) out.unshift(op); else out.splice(Math.min(out.length, 2), 0, op);
     out.push(...shuffle(CLOSE[star]).slice(0, out.length >= 6 ? 1 : 2));
