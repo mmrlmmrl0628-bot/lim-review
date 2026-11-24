@@ -42,12 +42,17 @@
   </div>
 
   <div class="step">
-    <h2>Step 2: 評価ポイントを選択してください</h2>
-    <div class="tags" id="tags"></div>
+    <h2>Step 2: 何について相談しましたか？（複数OK）</h2>
+    <div class="tags" id="tagsConsult"></div>
   </div>
 
   <div class="step">
-    <h2>Step 3: ご意見をお聞かせください</h2>
+    <h2>Step 3: 評価ポイントを選択してください</h2>
+    <div class="tags" id="tagsEval"></div>
+  </div>
+
+  <div class="step">
+    <h2>Step 4: ご意見をお聞かせください</h2>
     <div class="lbl">担当してくれたスタッフのお名前（任意）</div>
     <input id="staff" type="text" placeholder="例：山田" style="width:100%;padding:10px;font:inherit;font-size:14px;border:1px solid #ccc;border-radius:4px">
     <div class="lbl">ご自身の言葉で書きたいこと（任意）</div>
@@ -90,6 +95,10 @@
     "購入後のフォロー":["購入後のフォローも安心できました。","購入後も気にかけていただき、心強かったです。","引き渡し後の相談にも対応していただけそうで安心です。"],
     "清潔感がある":["店内に清潔感がありました。","店内が清潔で、気持ちよく相談できました。","明るく清潔感のあるお店でした。"],
     "アクセス":["アクセスが良く通いやすかったです。","お店の場所が分かりやすく、通いやすかったです。","アクセスしやすい立地で便利でした。"],
+    "知識が豊富":["不動産の知識が豊富で頼りになりました。","専門的な知識に基づいて、的確にアドバイスしていただけました。","知識が豊富で、どんな質問にも答えていただけました。"],
+    "提案が的確":["提案が的確で、とても参考になりました。","こちらの希望を踏まえた的確な提案をいただけました。","自分では気づかなかった選択肢も提案していただけました。"],
+    "雰囲気が良い":["お店の雰囲気が良く、リラックスして話せました。","スタッフの皆さんの雰囲気が良く、居心地が良かったです。","明るい雰囲気で、緊張せずに相談できました。"],
+    "また相談したい":["また何かあればぜひお願いしたいと思います。","次の機会もこちらに相談したいです。","これからも頼りにしたいと思えるお店でした。"],
     "満足できた":["全体として満足できました。","相談して本当に良かったと思います。","結果にとても満足しています。"]
   };
   const OPEN = {5:"大変満足しています。",4:"満足しています。",3:"全体的には普通でした。",2:"あまり満足できませんでした。",1:"残念ながら満足できませんでした。"};
@@ -116,27 +125,46 @@
   }
   function paint(){ [...starBox.children].forEach((b,k)=> b.textContent = k<star ? "★":"☆"); }
 
-  const tagBox = $("tags");
-  Object.keys(TAGS).forEach(name => {
-    const b = document.createElement("button"); b.type="button"; b.className="tag"; b.textContent=name;
-    b.onclick = () => { picked.has(name) ? picked.delete(name) : picked.add(name); b.classList.toggle("on"); };
-    tagBox.appendChild(b);
-  });
+  const CONSULT = ["不動産売買","住宅購入","中古住宅","新築","土地探し","売却相談","査定","住宅ローン","リフォーム","リノベーション","物件紹介"];
+  function mount(boxId, names){
+    const box = $(boxId);
+    names.forEach(name => {
+      const b = document.createElement("button"); b.type="button"; b.className="tag"; b.textContent=name;
+      b.onclick = () => { picked.has(name) ? picked.delete(name) : picked.add(name); b.classList.toggle("on"); };
+      box.appendChild(b);
+    });
+  }
+  mount("tagsConsult", CONSULT);
+  mount("tagsEval", Object.keys(TAGS).filter(n => !CONSULT.includes(n)));
 
-  function refresh(){ $("gen").disabled = !star; }
+  function openers(list){
+    const j = list.join("、");
+    return pick([j+"について相談しました。", j+"のことでお世話になりました。", j+"の件で相談に伺いました。", j+"を考えていて、こちらにお願いしました。"]);
+  }
 
   function generate(){
-    const names = shuffle([...picked]);
-    const sentences = [];
-    // 選んだ項目ごとに、毎回違う言い回しを1〜2文ずつ
-    names.forEach(n => { const v = shuffle(TAGS[n]); sentences.push(v[0]); if (names.length <= 3) sentences.push(v[1]); });
-    // 項目が少ない時は、同じ項目の別の言い回しを足して文を増やす
-    const closing = shuffle(CLOSE[star]).slice(0, names.length >= 4 ? 1 : 2);
+    const all = [...picked];
+    const consult = shuffle(all.filter(n => CONSULT.includes(n)));
+    const evals = shuffle(all.filter(n => !CONSULT.includes(n)));
+    const out = [];
+    // 相談内容：導入文 + 詳しい一文（最大2つ）
+    if (consult.length) {
+      out.push(openers(consult));
+      consult.slice(0, 2).forEach(n => out.push(shuffle(TAGS[n])[0]));
+    }
+    // 担当者
     const staff = $("staff").value.trim().replace(/(さん|様)$/, "");
-    if (staff) sentences.unshift("担当の" + staff + "さんが親身に対応してくださいました。");
+    if (staff) out.push(pick(["担当の"+staff+"さんが親身に対応してくださいました。","担当の"+staff+"さんの対応がとても丁寧でした。","担当してくださった"+staff+"さんに感謝しています。"]));
+    // 評価：選んだ項目ごとに1〜2文
+    evals.forEach(n => { const v = shuffle(TAGS[n]); out.push(v[0]); if (evals.length <= 2) out.push(v[1]); });
+    // 自分の言葉
     const own = $("extra").value.trim();
-    const body = [OPEN[star]].concat(sentences, own ? [own] : [], closing).join("");
-    $("text").value = body;
+    if (own) out.push(own);
+    // 星の数に合わせた一文は、先頭か後半のどちらかにランダムに置く
+    const op = OPEN[star];
+    if (Math.random() < 0.5) out.unshift(op); else out.splice(Math.min(out.length, 2), 0, op);
+    out.push(...shuffle(CLOSE[star]).slice(0, out.length >= 6 ? 1 : 2));
+    $("text").value = out.join("");
     $("copy").disabled = false; $("regen").style.display = "block";
   }
   $("gen").onclick = generate;
