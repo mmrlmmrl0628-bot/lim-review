@@ -153,11 +153,11 @@
       out.push(openers(consult));
       consult.slice(0, 2).forEach(n => out.push(shuffle(TAGS[n])[0]));
     }
-    // 担当者
+    // 担当者：名前があれば名前入りの文を1つだけ（「担当者」項目の文は出さない）
     const staff = $("staff").value.trim().replace(/(さん|様)$/, "");
     if (staff) out.push(pick(["担当の"+staff+"さんが親身に対応してくださいました。","担当の"+staff+"さんの対応がとても丁寧でした。","担当してくださった"+staff+"さんに感謝しています。"]));
-    // 評価：選んだ項目ごとに1〜2文
-    evals.forEach(n => { const v = shuffle(TAGS[n]); out.push(v[0]); if (evals.length <= 2) out.push(v[1]); });
+    // 評価：1項目につき1文だけ（同じ項目から複数文を出さない）
+    evals.filter(n => !(staff && n === "担当者")).forEach(n => out.push(pick(TAGS[n])));
     // 自分の言葉
     const own = $("extra").value.trim();
     if (own) out.push(own);
@@ -165,7 +165,7 @@
     const op = OPEN[star];
     if (Math.random() < 0.5) out.unshift(op); else out.splice(Math.min(out.length, 2), 0, op);
     out.push(...shuffle(CLOSE[star]).slice(0, out.length >= 6 ? 1 : 2));
-    $("text").value = out.join("");
+    $("text").value = [...new Set(out)].join("");
     $("copy").disabled = false; $("regen").style.display = "block";
   }
   $("gen").onclick = generate;
