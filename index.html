@@ -123,6 +123,7 @@
     b.onclick = () => { star = i; paint(); refresh(); };
     starBox.appendChild(b);
   }
+  function refresh(){ $("gen").disabled = !star; }
   function paint(){ [...starBox.children].forEach((b,k)=> b.textContent = k<star ? "★":"☆"); }
 
   const CONSULT = ["不動産売買","住宅購入","中古住宅","新築","土地探し","売却相談","査定","住宅ローン","リフォーム","リノベーション","物件紹介"];
