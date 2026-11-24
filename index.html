@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lim 不動産・住宅 | ご感想をお聞かせください</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#fff; font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif; color:#333; }
+  .wrap { max-width:480px; margin:0 auto; padding:24px 16px 56px; }
+  .logo { text-align:center; font-size:30px; font-weight:700; color:#2b2f3a; letter-spacing:.03em; }
+  .logo span { color:#2a6db0; }
+  h1 { font-size:26px; margin:28px 0 6px; text-align:left; color:#444; }
+  .desc { font-size:14px; line-height:1.7; color:#555; margin:0 0 18px; }
+  .step { background:#ececec; border-radius:14px; padding:18px 14px; margin-bottom:16px; text-align:center; }
+  .step h2 { margin:0 0 14px; font-size:17px; color:#009ece; }
+  .stars button { background:none; border:0; font-size:44px; line-height:1; color:#e6b93a; cursor:pointer; padding:0 3px; }
+  .tags { display:flex; flex-wrap:wrap; justify-content:center; gap:10px 8px; }
+  .tag { border:2px solid #009ece; background:#fff0; color:#222; border-radius:10px; padding:9px 16px; font:inherit; font-size:16px; cursor:pointer; }
+  .tag.on { background:#009ece; color:#fff; }
+  textarea { width:100%; height:150px; padding:10px; font:inherit; font-size:14px; border:1px solid #ccc; border-radius:4px; resize:vertical; background:#fff; }
+  .pill { display:block; width:100%; margin-top:12px; padding:15px; border-radius:30px; border:2px solid #009ece; background:#fff; color:#009ece; font:inherit; font-size:17px; font-weight:700; text-align:center; text-decoration:none; cursor:pointer; }
+  #go { background:#ff5f41; border-color:#ff5f41; }
+  .pill.main { background:#009ece; color:#fff; }
+  .pill:disabled { opacity:.45; cursor:not-allowed; }
+  .small { font-size:12px; color:#777; margin-top:10px; line-height:1.6; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0; justify-content:center; }
+  .chip { border:1px dashed #009ece; background:#fff; color:#009ece; border-radius:14px; padding:5px 10px; font:inherit; font-size:12px; cursor:pointer; }
+  .lbl { font-size:13px; color:#555; text-align:left; margin:14px 0 4px; }
+  #extra { height:60px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo"><img src="logo.png" alt="Lim" style="max-width:220px;height:auto"></div>
+  <h1>Lim 不動産・住宅</h1>
+  <p class="desc">ご来店ありがとうございました。当店の感想をご記入いただければ幸いです。</p>
+
+  <div class="step">
+    <h2>Step 1: 満足度を星の数で選択ください</h2>
+    <div class="stars" id="stars"></div>
+  </div>
+
+  <div class="step">
+    <h2>Step 2: 評価ポイントを選択してください</h2>
+    <div class="tags" id="tags"></div>
+  </div>
+
+  <div class="step">
+    <h2>Step 3: ご意見をお聞かせください</h2>
+    <div class="lbl">担当してくれたスタッフのお名前（任意）</div>
+    <input id="staff" type="text" placeholder="例：山田" style="width:100%;padding:10px;font:inherit;font-size:14px;border:1px solid #ccc;border-radius:4px">
+    <div class="lbl">ご自身の言葉で書きたいこと（任意）</div>
+    <textarea id="extra" placeholder="自由にご記入ください"></textarea>
+    <button class="pill main" id="gen" type="button" disabled>文章を自動作成</button>
+    <button class="pill" id="regen" type="button" style="display:none">別の文章にする</button>
+    <div class="lbl">できあがった文章（自由に修正できます）</div>
+    <textarea id="text" placeholder="ここに口コミの文章ができます"></textarea>
+    <button class="pill" id="copy" type="button" disabled>レビューをコピー</button>
+    <a class="pill main" id="go" target="_blank" rel="noopener">Googleマップで口コミを投稿する</a>
+    <p class="small">文章は選んだ内容をもとにした下書きです。実際のご感想に合わせて、修正してから投稿してください。</p>
+  </div>
+</div>
+
+<script>
+  const GOOGLE_URL = "https://maps.app.goo.gl/Psrwhhv1R2cZLDV69";
+
+  // 評価ポイント（売買のみ・肯定的な項目のみ）。1項目につき複数の言い回し
+  const TAGS = {
+    "不動産売買":["不動産の売買でお世話になりました。","初めての不動産売買でしたが、最初から最後まで丁寧にサポートしていただきました。","売買の流れを一つひとつ確認しながら進めていただけました。"],
+    "住宅購入":["住宅購入の相談に乗っていただきました。","マイホーム購入という大きな決断を、親身に支えていただきました。","住宅購入で気になる点を細かく聞いていただけました。"],
+    "中古住宅":["中古住宅について丁寧に案内していただきました。","中古住宅の状態や注意点も、分かりやすく説明していただけました。","中古住宅探しで、希望に合う物件を提案していただきました。"],
+    "新築":["新築についても分かりやすく説明していただきました。","新築物件の特徴や違いを比べながら教えていただけました。","新築選びで迷っていた点をていねいに整理していただけました。"],
+    "土地探し":["土地探しで親身にサポートしていただきました。","土地の条件や周辺環境まで丁寧に調べていただけました。","希望に合う土地を根気よく探していただけました。"],
+    "売却相談":["売却の相談にも親身に対応していただきました。","売却について、不安な点を一つずつ解消していただけました。","売却の進め方を分かりやすく説明していただけました。"],
+    "査定":["査定の内容も丁寧に説明していただきました。","査定の根拠を分かりやすく教えていただけました。","査定から売却の見通しまで、納得できる説明でした。"],
+    "住宅ローン":["住宅ローンについても分かりやすく教えていただきました。","住宅ローンの不安を、丁寧な説明で解消していただけました。","ローンの相談にも親身に乗っていただけました。"],
+    "リフォーム":["リフォームについても丁寧に対応していただきました。","リフォームの内容や費用感まで分かりやすく相談できました。","リフォームの希望を細かく聞いていただけました。"],
+    "リノベーション":["リノベーションの相談にも親身に乗っていただきました。","リノベーションのイメージを形にするお手伝いをしていただけました。","リノベーションの選択肢を丁寧に提案していただけました。"],
+    "物件紹介":["物件を丁寧に紹介していただきました。","希望条件に合った物件を的確に紹介していただけました。","物件のメリットだけでなく注意点も教えていただけました。"],
+    "担当者":["担当の方の対応がとても良かったです。","担当の方が親身で、とても頼りになりました。","担当の方の誠実な人柄に安心できました。"],
+    "説明が丁寧":["説明が丁寧で分かりやすかったです。","専門的な内容も、噛み砕いて説明していただけました。","質問にも一つひとつ丁寧に答えていただけました。"],
+    "親切な対応":["親切に対応していただきました。","終始親切で、気持ちよく相談できました。","細かな要望にも快く対応していただけました。"],
+    "無理な提案なし":["無理な提案もなく安心して相談できました。","しつこい営業がなく、自分のペースで検討できました。","こちらの意向を尊重して進めていただけました。"],
+    "不安解消":["不安に思っていたことを解消していただけました。","疑問点をその場で解決していただき、安心できました。","心配事を丁寧に聞いていただけました。"],
+    "安心感":["安心してお任せできました。","安心感のある対応でした。","信頼してお任せすることができました。"],
+    "気軽に相談":["気軽に相談できる雰囲気でした。","些細なことでも気軽に相談できました。","初めてでも入りやすい雰囲気のお店でした。"],
+    "スタッフの対応":["スタッフの対応が丁寧でした。","スタッフの皆さんの対応が明るく丁寧でした。","どのスタッフの方も感じが良かったです。"],
+    "対応が早い":["対応が早く助かりました。","連絡や手続きがスムーズで助かりました。","問い合わせへの返答が早く、安心できました。"],
+    "購入後のフォロー":["購入後のフォローも安心できました。","購入後も気にかけていただき、心強かったです。","引き渡し後の相談にも対応していただけそうで安心です。"],
+    "清潔感がある":["店内に清潔感がありました。","店内が清潔で、気持ちよく相談できました。","明るく清潔感のあるお店でした。"],
+    "アクセス":["アクセスが良く通いやすかったです。","お店の場所が分かりやすく、通いやすかったです。","アクセスしやすい立地で便利でした。"],
+    "満足できた":["全体として満足できました。","相談して本当に良かったと思います。","結果にとても満足しています。"]
+  };
+  const OPEN = {5:"大変満足しています。",4:"満足しています。",3:"全体的には普通でした。",2:"あまり満足できませんでした。",1:"残念ながら満足できませんでした。"};
+  // 選んだ項目が少ない時の締めの一言（実際の星の数に合わせる）
+  const CLOSE = {
+    5:["また何かあればぜひ相談したいです。","周りの方にもおすすめしたいです。","本当にありがとうございました。"],
+    4:["また相談したいと思います。","ありがとうございました。"],
+    3:["ありがとうございました。"],
+    2:["ありがとうございました。"],
+    1:["ありがとうございました。"]
+  };
+  const pick = a => a[Math.floor(Math.random()*a.length)];
+  const shuffle = a => [...a].sort(()=>Math.random()-.5);
+
+  let star = 0; const picked = new Set();
+  const $ = id => document.getElementById(id);
+  $("go").href = GOOGLE_URL;
+
+  const starBox = $("stars");
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement("button"); b.type="button"; b.textContent="☆";
+    b.onclick = () => { star = i; paint(); refresh(); };
+    starBox.appendChild(b);
+  }
+  function paint(){ [...starBox.children].forEach((b,k)=> b.textContent = k<star ? "★":"☆"); }
+
+  const tagBox = $("tags");
+  Object.keys(TAGS).forEach(name => {
+    const b = document.createElement("button"); b.type="button"; b.className="tag"; b.textContent=name;
+    b.onclick = () => { picked.has(name) ? picked.delete(name) : picked.add(name); b.classList.toggle("on"); };
+    tagBox.appendChild(b);
+  });
+
+  function refresh(){ $("gen").disabled = !star; }
+
+  function generate(){
+    const names = shuffle([...picked]);
+    const sentences = [];
+    // 選んだ項目ごとに、毎回違う言い回しを1〜2文ずつ
+    names.forEach(n => { const v = shuffle(TAGS[n]); sentences.push(v[0]); if (names.length <= 3) sentences.push(v[1]); });
+    // 項目が少ない時は、同じ項目の別の言い回しを足して文を増やす
+    const closing = shuffle(CLOSE[star]).slice(0, names.length >= 4 ? 1 : 2);
+    const staff = $("staff").value.trim().replace(/(さん|様)$/, "");
+    if (staff) sentences.unshift("担当の" + staff + "さんが親身に対応してくださいました。");
+    const own = $("extra").value.trim();
+    const body = [OPEN[star]].concat(sentences, own ? [own] : [], closing).join("");
+    $("text").value = body;
+    $("copy").disabled = false; $("regen").style.display = "block";
+  }
+  $("gen").onclick = generate;
+  $("regen").onclick = generate;
+
+  $("copy").onclick = async () => {
+    const t = $("text").value;
+    try { await navigator.clipboard.writeText(t); } catch(e){ $("text").select(); document.execCommand("copy"); }
+    $("copy").textContent = "コピーしました ✓";
+    setTimeout(()=> $("copy").textContent = "レビューをコピー", 2000);
+  };
+</script>
+</body>
+</html>
